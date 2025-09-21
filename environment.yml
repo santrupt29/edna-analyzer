@@ -1,0 +1,33 @@
+name: edna
+channels:
+  - pytorch      # Added this channel and moved it to the top for priority
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - python=3.10
+  # Core scientific stack
+  - numpy
+  - pandas
+  - scikit-learn
+  - matplotlib
+  - seaborn
+  - jupyterlab
+
+  # Bioinformatics
+  - biopython
+  - seqkit              # Removed the specific version to let Conda find a compatible one
+
+  # Deep learning
+  - pytorch      # Removed versions to let Conda resolve the best ones
+  - torchvision
+  - torchaudio
+  - cpuonly
+
+  # Large dataset handling
+  - dask
+
+  # pip dependencies
+  - pip
+  - pip:
+      - transformers
