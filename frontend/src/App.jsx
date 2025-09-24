@@ -5,7 +5,7 @@ import { toast } from "react-hot-toast";
 
 import Home from "./pages/HomePage";
 import SignUp from "./pages/SignUpPage";
-import SignIn from "./pages/SigninPage";
+import SignIn from "./pages/SignInPage";
 import UploadPage from "./pages/UploadPage";
 import LandingPage from "./pages/LandingPage.jsx";
 

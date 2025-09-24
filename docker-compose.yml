@@ -1,0 +1,110 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: edna-backend
+    ports:
+      - "3001:3001"  # Express server
+      - "8000:8000"  # FastAPI server
+    environment:
+      - NODE_ENV=${NODE_ENV:-development}
+      - PORT=3001
+      - SUPABASE_URL=https://srvabsamrqquzfcoduhs.supabase.co
+      - SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNydmFic2FtcnFxdXpmY29kdWhzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg2MjEyMzQsImV4cCI6MjA3NDE5NzIzNH0.x_tg8CUfbMl8Vy5HzaQO-_Ajt_OWfRI5E7LwuiExbKQ
+      - SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNydmFic2FtcnFxdXpmY29kdWhzIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1ODYyMTIzNCwiZXhwIjoyMDc0MTk3MjM0fQ.37u89VMIeSsDe10ZiBTLOr-hx5QKQGU-Xz10W3qfew0
+      - PYTHONPATH=/app
+    volumes:
+      - ./backend:/app
+      - edna_data:/app/data
+      - edna_models:/app/data/models
+    networks:
+      - edna-network
+    restart: unless-stopped
+    depends_on:
+      - redis
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: edna-frontend
+    ports:
+      - "3000:80"
+    environment:
+      - VITE_BACKEND_URL=http://localhost:3001
+      - VITE_SUPABASE_URL=https://srvabsamrqquzfcoduhs.supabase.co
+      - VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNydmFic2FtcnFxdXpmY29kdWhzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg2MjEyMzQsImV4cCI6MjA3NDE5NzIzNH0.x_tg8CUfbMl8Vy5HzaQO-_Ajt_OWfRI5E7LwuiExbKQ
+    networks:
+      - edna-network
+    restart: unless-stopped
+    depends_on:
+      - backend
+
+  redis:
+    image: redis:7-alpine
+    container_name: edna-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - edna-network
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+
+  # Optional: for development with hot reload
+  backend-dev:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    container_name: edna-backend-dev
+    ports:
+      - "3001:3001"
+      - "8000:8000"
+    environment:
+      - NODE_ENV=development
+      - PORT=3001
+      - SUPABASE_URL=https://srvabsamrqquzfcoduhs.supabase.co
+      - SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNydmFic2FtcnFxdXpmY29kdWhzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg2MjEyMzQsImV4cCI6MjA3NDE5NzIzNH0.x_tg8CUfbMl8Vy5HzaQO-_Ajt_OWfRI5E7LwuiExbKQ
+      - SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNydmFic2FtcnFxdXpmY29kdWhzIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1ODYyMTIzNCwiZXhwIjoyMDc0MTk3MjM0fQ.37u89VMIeSsDe10ZiBTLOr-hx5QKQGU-Xz10W3qfew0
+      - PYTHONPATH=/app
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+      - edna_data:/app/data
+    networks:
+      - edna-network
+    profiles:
+      - dev
+
+  frontend-dev:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: edna-frontend-dev
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_BACKEND_URL=http://localhost:3001
+      - VITE_SUPABASE_URL=https://srvabsamrqquzfcoduhs.supabase.co
+      - VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNydmFic2FtcnFxdXpmY29kdWhzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg2MjEyMzQsImV4cCI6MjA3NDE5NzIzNH0.x_tg8CUfbMl8Vy5HzaQO-_Ajt_OWfRI5E7LwuiExbKQ
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    networks:
+      - edna-network
+    profiles:
+      - dev
+
+volumes:
+  edna_data:
+    driver: local
+  edna_models:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  edna-network:
+    driver: bridge
