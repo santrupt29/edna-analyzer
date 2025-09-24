@@ -9,4 +9,12 @@ node_modules
 .vscode
 .idea
 .vscode
+<<<<<<< Updated upstream
 .csv
+=======
+dataset_sample/
+runs/
+taxanomy/
+>>>>>>> Stashed changes
+data/kmer_counts_10k.csv
+backend/dna/rs/refs_all.fasta

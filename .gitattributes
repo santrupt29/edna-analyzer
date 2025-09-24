@@ -1,0 +1,2 @@
+data/kmer_counts_10k.csv filter=lfs diff=lfs merge=lfs -text
+backend/dna/rs/refs_all.fasta filter=lfs diff=lfs merge=lfs -text

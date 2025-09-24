@@ -1,0 +1,31 @@
+services:
+  backend:
+    build: ./backend
+    ports:
+    - "8000:8000"
+    volumes:
+    - ./data:/app/data
+    - ./dna:/app/dna
+    environment:
+    - PYTHONUNBUFFERED=1
+    env_file:
+    - ./backend/.env
+    networks:
+    - edna-network
+
+  frontend:
+    build: ./frontend
+    ports:
+    - "3000:3000"
+    depends_on:
+    - backend
+    environment:
+    - VITE_SUPABASE_URL=https://srvabsamrqquzfcoduhs.supabase.co
+
+    - VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNydmFic2FtcnFxdXpmY29kdWhzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg2MjEyMzQsImV4cCI6MjA3NDE5NzIzNH0.x_tg8CUfbMl8Vy5HzaQO-_Ajt_OWfRI5E7LwuiExbKQ
+    networks:
+    - edna-network
+
+networks:
+  edna-network:
+    driver: bridge
