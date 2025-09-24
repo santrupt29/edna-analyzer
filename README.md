@@ -1,212 +1,162 @@
 
-# edna-analyzer
+# 🧬 edna-analyzer
 
-> **Reference-light, AI-first analysis of deep-sea eDNA**  
-> Classify 18S/COI reads, surface putative **novel taxa**, and compute biodiversity metrics — even when reference databases are sparse.
+<div align="center">
 
----
+**AI-powered discovery engine for environmental DNA.** <sub>Classify known species with confidence and surface novel taxa from the "unassigned."</sub>
 
-## Problem Statement (SIH-25042)
+</div>
 
-Deep-sea biodiversity is under-catalogued. Database-dependent pipelines (QIIME2/DADA2, BLAST-based) often misclassify or leave many eDNA reads **unassigned** because PR2/SILVA/NCBI have limited coverage for deep-sea eukaryotes.
+<div align="center">
 
-**edna-analyzer** minimizes reliance on those databases by learning from **DNA foundation-model embeddings**. It assigns labels **only when confident** and clusters the rest to highlight candidate **new/rare taxa** for CMLRE/MoES monitoring and discovery.
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python Version](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![Status](https://img.shields.io/badge/status-active-brightgreen.svg)]()
 
----
-
-## Key Features
-
-- **Foundation-model embeddings** (Nucleotide-Transformer v2-100M; Hugging Face/PyTorch).  
-- **ANN search** with **FAISS (IVF-PQ)** + calibrated **τ** threshold for conservative labeling.  
-- **Novelty discovery**: HDBSCAN on rejected reads; **Novelty Index** per cluster; exemplar sequence + nearest known relative.  
-- **Ecology outputs**: per-sample abundance, **Shannon/Simpson**, **Bray–Curtis**, optional **Krona** + UMAP visualizations.  
-- **API + UI**: FastAPI backend; simple web UI (Next.js/React or Streamlit) for upload → results.  
-- **Reproducible & offline-friendly**: versioned artifacts (`refs_all.fasta`, `ref_index.faiss`, `ref_meta.json`), `summary.json` with checksums.
+</div>
 
 ---
 
-## Pipeline (High Level)
+### The Problem: Databases Can't Keep Up
 
-1. **Preprocess**: trim/quality-filter; discard **< 30 bp**; de-novo chimera removal.  
-2. **Embed**: convert reads → fixed-dim vectors (mean-pool; future: `[CLS]`).  
-3. **Search/Assign**: FAISS ANN against small **anchor** set (PR2/SILVA/BOLD slice).  
-   - if similarity ≥ **τ** → assign at highest reliable rank (order → family → genus)  
-   - else **reject** → mark **unassigned**  
-4. **Cluster negatives**: HDBSCAN on unassigned → **candidate novel groups**  
-5. **Summarize**: abundance tables, diversity metrics, **Novelty Index**, HTML/CSV/JSON reports
+Traditional eDNA analysis pipelines rely on matching sequences to reference databases. For frontier environments like the deep sea, these databases are vastly incomplete, leaving a majority of reads **unassigned**. This isn't just noise—it's a missed opportunity for discovery.
 
----
+### Our Solution: Understand DNA's Language
 
-## Repository Structure
+`edna-analyzer` takes a different approach. It uses a **DNA foundation model**—an AI that has learned the fundamental patterns of DNA sequences. Instead of just "matching words" (exact sequences), it understands the "grammar" and context.
 
-```
+This allows us to:
+1.  **Confidently Classify** reads that have a strong semantic similarity to a curated set of known organisms.
+2.  **Systematically Discover** what's new by clustering the remaining reads, turning the "unassigned" majority into a prioritized list of candidate novel species.
 
-edna-analyzer/
-├─ pipeline/           # ingest → embed → search → cluster → report
-├─ models/             # cached model weights/tokenizer
-├─ anchors/            # refs\_all.fasta, refs\_all.phylum\_class.tsv, ref\_index.faiss, ref\_meta.json
-├─ api/                # FastAPI app (REST endpoints)
-├─ ui/                 # Next.js/React or Streamlit UI
-├─ scripts/            # embed.py, build\_index.py, run\_pipeline.py, etc.
-├─ requirements.txt
-├─ docker-compose.yml
-└─ README.md
+## Visual Workflow
 
+```mermaid
+graph LR
+    A[FASTQ/FASTA Reads] --> B{1. Preprocess};
+    B --> C[Clean Reads];
+    C --> D{2. Embed};
+    D -- Nucleotide Transformer --> E[Sequence Vectors];
+    E --> F{3. Search};
+    F -- FAISS ANN Search --> G{Similarity ≥ τ ?};
+    G -- Yes --> H[✅ Assigned Taxon];
+    G -- No --> I[❓ Unassigned];
+    I --> J{4. Cluster};
+    J -- HDBSCAN --> K[🔬 Candidate Novel Taxa];
+    H & K --> L{5. Report};
+    L --> M[📊 Abundance, Diversity & Visuals];
 ````
 
-*(Folder names may differ slightly; adjust to your tree.)*
+## Core Features
 
----
+  * **AI-Powered Classification**: Uses `Nucleotide-Transformer` embeddings to capture deep sequence context, providing more robust classification than alignment-based methods.
+  * **High-Speed Vector Search**: Employs **FAISS** (`IVF-PQ`) for approximate nearest neighbor search, enabling rapid comparison of millions of reads against our reference index.
+  * **Automated Novelty Discovery**: Applies **HDBSCAN**, a powerful density-based clustering algorithm, to group unassigned vectors into high-confidence candidates for new taxa.
+  * **Actionable Outputs**: Generates publication-ready tables (`.csv`), biodiversity metrics (`.json`), and interactive visualizations (`.html` with Krona/UMAP).
+  * **Reproducible & Accessible**: Fully containerized with **Docker** and accessible via a **FastAPI** backend and a simple web interface.
 
-## Quickstart
+-----
 
-### 1) Local (Python)
+## 🚀 Quickstart
+
+### 1\. Docker (Recommended)
+
+Get the full application stack running with a single command.
 
 ```bash
-# Clone
-git clone https://github.com/santrupt29/edna-analyzer.git
+# Build and start the services (API, UI, etc.)
+docker compose up --build
+
+# ➡️ API is now live at http://localhost:8000
+# ➡️ Interactive Docs at http://localhost:8000/docs
+# ➡️ Web UI at http://localhost:3000
+```
+
+### 2\. Local Python Environment
+
+For command-line use and development.
+
+```bash
+# 1. Clone & setup environment
+git clone [https://github.com/santrupt29/edna-analyzer.git](https://github.com/santrupt29/edna-analyzer.git)
 cd edna-analyzer
-
-# Create env
-python3 -m venv .venv
-source .venv/bin/activate
-
-# Install deps
+python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 
-# First run: fetch model + build FAISS index
+# 2. Download model & build index (one-time setup)
 python scripts/download_model.py
 python scripts/build_index.py --refs anchors/refs_all.fasta --out anchors/ref_index.faiss
 
-# Run on example data
+# 3. Run a sample analysis
 python scripts/run_pipeline.py \
   --input data/sample.fastq \
   --out results/ \
-  --tau 0.20 \
-  --topk 5 \
-  --min-cluster-size 10 \
-  --min-samples 5
-````
-
-### 2) Docker (optional)
-
-```bash
-docker compose up --build
-# API → http://localhost:8000 (OpenAPI docs at /docs)
-# UI  → http://localhost:3000
+  --tau 0.20
 ```
 
----
+-----
 
-## Inputs & Outputs
+## 📁 Inputs & Outputs
 
-**Inputs**
+| File Type          | Description                                                                                             |
+| ------------------ | ------------------------------------------------------------------------------------------------------- |
+| **Input** | `FASTQ` / `FASTA` files (gzipped `.gz` accepted) for 18S or COI amplicons.                                |
+| **Output Files** |                                                                                                         |
+| `results.csv`      | Per-read results: assigned taxon, similarity score, or novel cluster ID.                                |
+| `clusters.csv`     | Novel cluster summary: size, exemplar sequence, nearest known relative.                                 |
+| `abundance.csv`    | Counts and relative abundance matrix (samples vs. taxa/clusters).                                       |
+| `diversity.json`   | Key metrics: Shannon, Simpson (Alpha), Bray-Curtis (Beta).                                              |
+| `report.html`      | Interactive summary report with plots and charts.                                                       |
+| `summary.json`     | Run parameters, file checksums, and versions for full reproducibility.                                  |
 
-* FASTQ/FASTA (gz accepted). Amplicons: **18S rRNA / COI**.
+-----
 
-**Outputs (in `results/`)**
+## 🔧 Key Configuration
 
-* `results.csv` — per-read label (taxon, rank, similarity, cluster\_id)
-* `clusters.csv` — novel clusters (size, Novelty Index, exemplar, nearest relative)
-* `abundance.csv` — counts & relative abundance per sample × taxon/cluster
-* `diversity.json` — Shannon, Simpson, Bray–Curtis (+ ordination coords if computed)
-* `report.html` — interactive plots (UMAP/Krona, bars/stacks)
-* `summary.json` — parameters, counts, model/index versions, SHA-256 checksums
+| Flag                 | Description                                       | Default    |
+| -------------------- | ------------------------------------------------- | ---------- |
+| `--input`            | Path to input FASTQ/FASTA file.                   | `None`     |
+| `--out`              | Output directory for results.                     | `results/` |
+| `--tau`              | Similarity threshold for classification.          | `0.20`     |
+| `--topk`             | Number of neighbors to retrieve from FAISS.       | `5`        |
+| `--min-cluster-size` | HDBSCAN parameter for minimum cluster size.       | `10`       |
+| `--max-reads`        | Subsample input to N reads for a quick preview.   | `None`     |
 
----
+-----
 
-## FastAPI (Core Endpoints)
+## 🛣️ Roadmap
 
-* `POST /api/v1/jobs` — submit analysis (file upload or S3/MinIO URL)
-* `GET  /api/v1/jobs/{id}` — job status + summary
-* `GET  /api/v1/jobs/{id}/results` — per-read/class/cluster outputs
-* `GET  /api/v1/refs/health` — versions & checksums of model/anchors/index
+  - [ ] **Model Enhancements**: Fine-tune the foundation model on a curated set of marine taxa.
+  - [ ] **Auto-τ Calibration**: Develop a method to automatically recommend an optimal `τ` threshold based on the input data's similarity distribution.
+  - [ ] **Hybrid Search Index**: Explore HNSW+PQ indexes in FAISS for potentially faster and more accurate search.
+  - [ ] **Scalable Workflow**: Port the core logic to Nextflow/Snakemake for seamless execution on HPC and cloud platforms.
+  - [ ] **Phylogenetic Placement**: For novel clusters, place the exemplar sequence onto a reference tree to better visualize its evolutionary context.
 
-*(See live docs at `/docs` after the server starts.)*
+## 🤝 Contributing
 
----
+Contributions are welcome\! Please open an issue to discuss bugs or feature ideas before submitting a pull request.
 
-## Configuration (Common Flags)
+**Contributors:** Santrupt Potphode, Aniket Desai, Gaurav Sharma, Rakshitha Kowlikar, Kartik Bulusu
 
-* `--tau` : similarity threshold for assignment (default: **0.20**, conservative)
-* `--topk`: FAISS neighbors to retrieve (typ. 5–10)
-* `--min-cluster-size`, `--min-samples` : HDBSCAN granularity
-* `--metric`: similarity metric (`l2` now; **cosine/FlatIP** planned)
-* `--max-reads`: cap for very large inputs (quick subsample previews)
+## 🙏 Acknowledgements
 
----
+This work is for the **Smart India Hackathon 2025**, in service of the **Ministry of Earth Sciences (MoES)** and **CMLRE**. We stand on the shoulders of giants—thank you to the maintainers of PyTorch, Hugging Face, FAISS, HDBSCAN, and many other open-source projects.
 
-## Tech Stack
+## ⚖️ License
 
-* **Algorithm/ML** — PyTorch, Hugging Face (NT v2-100M), FAISS (IVF-PQ), HDBSCAN
-* **Backend** — FastAPI (+ Celery/Redis optional), Nextflow/Snakemake
-* **Frontend** — Next.js/React or Streamlit; Plotly + Krona
-* **Data/Storage** — PostgreSQL; MinIO/S3 or local FS; Dockerized deploy
-* **Security** — TLS, JWT/API keys; versioned artifacts (SHA-256)
+Licensed under the **MIT License**.
 
----
-
-## Roadmap (Post-Prototype)
-
-* **Model**: larger transformer; **`[CLS]` pooling**; **sliding-window** for long reads
-* **Search**: normalize embeddings; **cosine / FlatIP**; **OPQ+PQ** for huge refs; hybrid HNSW+IVF
-* **Calibration**: **auto-τ** from similarity distributions / energy-based OOD; rank-aware stop (order→family→genus)
-* **Interpretability**: for each novel cluster, show **nearest relative** + exemplars
-* **Workflow**: full Nextflow/Snakemake; cloud batch; richer reports & maps
-
----
-
-## Data & References
-
-* PR2 (18S): [https://pr2-database.org](https://pr2-database.org)
-* SILVA SSU: [https://www.arb-silva.de](https://www.arb-silva.de)
-* BOLD (COI): [https://www.boldsystems.org](https://www.boldsystems.org)
-* NCBI BLAST DB FTP (anchors/baselines): [https://ftp.ncbi.nlm.nih.gov/blast/db/](https://ftp.ncbi.nlm.nih.gov/blast/db/)
-* FAISS: [https://github.com/facebookresearch/faiss](https://github.com/facebookresearch/faiss)
-* HDBSCAN: [https://hdbscan.readthedocs.io](https://hdbscan.readthedocs.io)
-* Krona: [https://github.com/marbl/Krona](https://github.com/marbl/Krona)
-
----
-
-## Contributing
-
-Issues and PRs are welcome! Please open an issue describing bugs/feature requests before large changes.
-
----
-
-## Contributors
-
-* **Santrupt Potphode**
-* **Aniket Desai**
-* **Gaurav Sharma**
-* **Rakshitha Kowlikar**
-* **Kartik Bulusu**
-
----
-
-## Acknowledgements
-
-Ministry of Earth Sciences (MoES), **CMLRE**, and the **Smart India Hackathon (SIH 2025)**. Thanks to the maintainers of PR2, SILVA, FAISS, and HDBSCAN.
-
----
-
-## License
-
-Specify your license (e.g., MIT) in `LICENSE`. If unsure, start with MIT and update later.
-
----
-
-## Citation
+## 🖋️ Citation
 
 ```bibtex
 @software{edna_analyzer_2025,
   title  = {edna-analyzer: Reference-light AI for Deep-Sea eDNA},
   year   = {2025},
   author = {Potphode, Santrupt and Desai, Aniket and Sharma, Gaurav and Kowlikar, Rakshitha and Bulusu, Kartik},
-  url    = {https://github.com/santrupt29/edna-analyzer}
+  url    = {[https://github.com/santrupt29/edna-analyzer](https://github.com/santrupt29/edna-analyzer)}
 }
 ```
 
 ```
-::contentReference[oaicite:0]{index=0}
 ```
