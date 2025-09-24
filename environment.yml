@@ -1,6 +1,6 @@
 name: edna
 channels:
-  - pytorch      # Added this channel and moved it to the top for priority
+  - pytorch
   - conda-forge
   - bioconda
   - defaults
@@ -14,20 +14,21 @@ dependencies:
   - seaborn
   - jupyterlab
 
-  # Bioinformatics
+  # Bioinformatics tools
   - biopython
-  - seqkit              # Removed the specific version to let Conda find a compatible one
+  - seqkit       # This will install correctly on Linux
+  - blast        # For converting database files
 
   # Deep learning
-  - pytorch      # Removed versions to let Conda resolve the best ones
+  - pytorch
   - torchvision
   - torchaudio
   - cpuonly
 
   # Large dataset handling
   - dask
+  - pip
 
   # pip dependencies
-  - pip
   - pip:
       - transformers

@@ -4,8 +4,8 @@ from collections import defaultdict
 import itertools
 
 # --- Configuration ---
-INPUT_FASTA = "data/sample_1000.fasta"
-OUTPUT_CSV = "data/kmer_counts.csv"
+INPUT_FASTA = "data/sample_10000.fasta"
+OUTPUT_CSV = "data/kmer_counts_10k.csv"
 K = 6 # The length of the k-mer
 
 def count_kmers(sequence, k):
@@ -28,13 +28,13 @@ def main():
     for record in SeqIO.parse(INPUT_FASTA, "fasta"):
         seq_id = record.id
         sequence = str(record.seq).upper()
-
+        
         # Count k-mers for the current sequence
         kmer_counts = count_kmers(sequence, K)
-
+        
         # Add the sequence ID to the dictionary
         kmer_counts['sequence_id'] = seq_id
-
+        
         all_sequence_data.append(kmer_counts)
 
     # Convert the list of dictionaries to a pandas DataFrame
