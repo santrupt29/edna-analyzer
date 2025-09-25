@@ -1,5 +1,10 @@
 import { supabase } from "../config/supabase.js";
 import { v4 as uuidv4 } from "uuid";
+import axios from "axios";
+import FormData from "form-data";
+
+const ML_API = "https://huggingface.co/spaces/KartikB34/DNA_Cluster_Analyzer";
+
 
 export const handleFileUpload = async (req, res) => {
   try {
@@ -10,17 +15,14 @@ export const handleFileUpload = async (req, res) => {
       return res.status(400).json({ error: "user_id, file_type, and file are required" });
     }
 
-    // Ensure file_type is valid
     if (!["fasta", "fastq", "csv"].includes(file_type.toLowerCase())) {
       return res.status(400).json({ error: "Invalid file type. Allowed: fasta, fastq, csv" });
     }
 
-    // Generate unique filename & path
     const ext = file.originalname.split(".").pop();
     const uniqueName = `${uuidv4()}.${ext}`;
     const storagePath = `uploads/${uniqueName}`;
 
-    // Upload file to Supabase Storage
     const { error: storageError } = await supabase.storage
       .from("uploads")
       .upload(storagePath, file.buffer, {
@@ -29,27 +31,78 @@ export const handleFileUpload = async (req, res) => {
 
     if (storageError) throw storageError;
 
-    // Save record in `uploads` table (status = pending)
     const { data, error: dbError } = await supabase
-      .from("uploads")
-      .insert([
-        {
-          user_id,
-          file_name: file.originalname,
-          file_type: file_type,
-          file_path: storagePath,
-          status: "pending",
-        },
-      ])
-      .select()
-      .single();
+  .from("uploads")
+  .insert([
+    {
+      user_id,
+      file_name: file.originalname,
+      file_type,
+      file_path: storagePath,
+      status: "pending",
+    },
+  ])
+  .select()
+  .single();
 
-    if (dbError) throw dbError;
+if (dbError) throw dbError;
 
-    res.status(201).json({
-      message: "File uploaded successfully",
-      upload: data,
-    });
+// Call ML
+const form = new FormData();
+form.append("file", file.buffer, {
+  filename: file.originalname,
+  contentType: file.mimetype,
+});
+
+let mlData = null;
+let status = "completed";
+try {
+  const response = await axios.post(`${ML_API}/predict_fasta`, form, {
+    headers: form.getHeaders(),
+  });
+  mlData = response.data;
+} catch (mlErr) {
+  console.error("ML API Error:", mlErr.response?.data || mlErr.message);
+  status = "failed";
+}
+
+// Insert into results if success
+let resultRow = null;
+if (status === "completed") {
+  const myuuid = uuidv4();
+  const { data: resultData, error: resultError } = await supabase
+    .from("results")
+    .insert([
+      {
+        id: myuuid,
+        upload_id: data.id,
+        summary: mlData,
+        report_path: null,
+      },
+    ])
+    .select()
+    .single();
+
+  if (resultError) throw resultError;
+  resultRow = resultData;
+
+  // Update uploads with result_id + status
+  await supabase.from("uploads").update({
+    status,
+    result_id: myuuid,
+  }).eq("id", data.id);
+} else {
+  await supabase.from("uploads").update({
+    status,
+  }).eq("id", data.id);
+}
+
+res.status(201).json({
+  message: "File uploaded and processed",
+  upload: data,
+  result: resultRow,
+});
+
   } catch (error) {
     console.error("Upload Error:", error.message);
     res.status(500).json({ error: error.message });
