@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useState,useEffect } from "react";
 import axiosInstance from "../lib/axios";
 import { supabase } from "../lib/supabase.js";
+import Navbar from "../components/Navbar.jsx";
 import {
   ScatterChart,
   Scatter,
@@ -20,6 +21,29 @@ const UploadPage = () => {
   const [results, setResults] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const getUser = async () => {
+      const { data, error } = await supabase.auth.getUser();
+      if (error) {
+        console.error(error);
+      } else {
+        setUser(data.user);
+      }
+    };
+    getUser();
+
+    const { data: listener } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        setUser(session?.user ?? null);
+      }
+    );
+
+    return () => {
+      listener.subscription.unsubscribe();
+    };
+  }, []);
 
   const handleUpload = async () => {
     if (!file) {
@@ -114,6 +138,8 @@ const UploadPage = () => {
   };
 
   return (
+    <>
+    <Navbar user={user} setUser={setUser}/>
     <div style={{
       minHeight: '100vh',
       background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #cbd5e1 100%)',
@@ -220,17 +246,17 @@ const UploadPage = () => {
             <div style={{ display: 'flex', gap: '12px' }}>
               {['fasta', 'fastq', 'csv'].map((type) => (
                 <button
-                  key={type}
-                  onClick={() => setFileType(type)}
-                  style={{
-                    padding: '12px 24px',
-                    borderRadius: '8px',
-                    border: fileType === type ? '2px solid #2563eb' : '2px solid #e2e8f0',
-                    background: fileType === type ? '#2563eb' : '#f8fafc',
-                    color: fileType === type ? 'white' : '#64748b',
-                    fontWeight: '600',
-                    fontSize: '14px',
-                    textTransform: 'uppercase',
+                key={type}
+                onClick={() => setFileType(type)}
+                style={{
+                  padding: '12px 24px',
+                  borderRadius: '8px',
+                  border: fileType === type ? '2px solid #2563eb' : '2px solid #e2e8f0',
+                  background: fileType === type ? '#2563eb' : '#f8fafc',
+                  color: fileType === type ? 'white' : '#64748b',
+                  fontWeight: '600',
+                  fontSize: '14px',
+                  textTransform: 'uppercase',
                     cursor: 'pointer',
                     transition: 'all 0.3s ease',
                     boxShadow: fileType === type ? '0 2px 4px rgba(37,99,235,0.2)' : 'none'
@@ -360,7 +386,7 @@ const UploadPage = () => {
                     name="Silhouette"
                     stroke="#6b7280"
                     style={{ fontSize: '12px' }}
-                  />
+                    />
                   <Tooltip content={<CustomTooltip />} />
                   <Legend />
                   <Scatter name="Sequences" data={scatterData} fill="#2563eb">
@@ -434,204 +460,38 @@ const UploadPage = () => {
         @keyframes pulse {
           0%, 100% {
             opacity: 1;
-          }
-          50% {
-            opacity: 0.7;
-          }
-        }
-        
-        @keyframes fadeIn {
-          from {
-            opacity: 0;
-            transform: translateY(20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
+            }
+            50% {
+              opacity: 0.7;
+              }
+              }
+              
+              @keyframes fadeIn {
+                from {
+                  opacity: 0;
+                  transform: translateY(20px);
+                  }
+                  to {
+                    opacity: 1;
+                    transform: translateY(0);
+                    }
         }
         
         @keyframes slideIn {
           from {
             opacity: 0;
             transform: translateX(-20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateX(0);
-          }
-        }
-      `}</style>
+            }
+            to {
+              opacity: 1;
+              transform: translateX(0);
+              }
+              }
+              `}</style>
     </div>
+              </>
   );
 };
 
 export default UploadPage;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// import React, { useState } from "react";
-// import axiosInstance from "../lib/axios";
-// import { supabase } from "../lib/supabase.js";
-// import {
-//   ScatterChart,
-//   Scatter,
-//   XAxis,
-//   YAxis,
-//   Tooltip,
-//   CartesianGrid,
-//   Legend,
-// } from "recharts";
-
-// const UploadPage = () => {
-//   const [file, setFile] = useState(null);
-//   const [fileType, setFileType] = useState("fasta");
-//   const [status, setStatus] = useState("");
-//   const [results, setResults] = useState(null);
-
-//   const handleUpload = async (e) => {
-//     e.preventDefault();
-
-//     if (!file) {
-//       setStatus("Please select a file.");
-//       return;
-//     }
-
-//     try {
-//       const {
-//         data: { user },
-//         error: userError,
-//       } = await supabase.auth.getUser();
-
-//       if (userError || !user) {
-//         setStatus("You must be signed in to upload.");
-//         return;
-//       }
-
-//       const formData = new FormData();
-//       formData.append("file", file);
-//       formData.append("user_id", user.id);
-//       formData.append("file_type", fileType);
-
-//       const { data } = await axiosInstance.post("/uploads", formData, {
-//         headers: { "Content-Type": "multipart/form-data" },
-//       });
-
-//       setStatus(`✅ File uploaded successfully: ${data.upload.file_name}`);
-//       setResults(data.result?.summary || null); // <-- ML results live here
-//     } catch (error) {
-//       if (error.response) {
-//         setStatus(`❌ Error: ${error.response.data.error}`);
-//       } else {
-//         setStatus(`❌ Upload failed: ${error.message}`);
-//       }
-//     }
-//   };
-
-//   // Prepare scatterplot data
-//   const scatterData =
-//     results?.results?.map((r) => ({
-//       cluster: r.cluster,
-//       silhouette: r.silhouette ?? 0,
-//       id: r.id,
-//     })) || [];
-
-//   return (
-//     <div style={{ padding: "20px" }}>
-//       <h2>Upload eDNA File</h2>
-//       <form onSubmit={handleUpload}>
-//         <div>
-//           <label>Choose File: </label>
-//           <input
-//             type="file"
-//             accept=".fasta,.fastq,.csv"
-//             onChange={(e) => setFile(e.target.files[0])}
-//           />
-//         </div>
-
-//         <div>
-//           <label>File Type: </label>
-//           <select
-//             value={fileType}
-//             onChange={(e) => setFileType(e.target.value)}
-//           >
-//             <option value="fasta">FASTA</option>
-//             <option value="fastq">FASTQ</option>
-//             <option value="csv">CSV</option>
-//           </select>
-//         </div>
-
-//         <button type="submit" style={{ marginTop: "10px" }}>
-//           Upload
-//         </button>
-//       </form>
-
-//       {status && <p style={{ marginTop: "15px" }}>{status}</p>}
-
-//       {results && (
-//         <div style={{ marginTop: "30px" }}>
-//           <h3>Analysis Results</h3>
-//           <p>
-//             <b>Overall Silhouette:</b> {results.overall_silhouette ?? "N/A"}
-//           </p>
-
-//           {/* Scatterplot */}
-//           <ScatterChart
-//             width={800}
-//             height={400}
-//             margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
-//           >
-//             <CartesianGrid />
-//             <XAxis type="number" dataKey="cluster" name="Cluster" />
-//             <YAxis type="number" dataKey="silhouette" name="Silhouette" />
-//             <Tooltip cursor={{ strokeDasharray: "3 3" }} />
-//             <Legend />
-//             <Scatter name="Sequences" data={scatterData} fill="#8884d8" />
-//           </ScatterChart>
-
-//           {/* Results Table */}
-//           <table border="1" cellPadding="6" style={{ marginTop: "20px" }}>
-//             <thead>
-//               <tr>
-//                 <th>ID</th>
-//                 <th>Cluster</th>
-//                 <th>Confidence</th>
-//                 <th>Silhouette</th>
-//                 <th>Note</th>
-//               </tr>
-//             </thead>
-//             <tbody>
-//               {results.results.map((r, idx) => (
-//                 <tr key={idx}>
-//                   <td>{r.id}</td>
-//                   <td>{r.cluster}</td>
-//                   <td>{r.confidence}</td>
-//                   <td>{r.silhouette ?? "-"}</td>
-//                   <td>{r.note ?? "-"}</td>
-//                 </tr>
-//               ))}
-//             </tbody>
-//           </table>
-//         </div>
-//       )}
-//     </div>
-//   );
-// };
-
-// export default UploadPage;
