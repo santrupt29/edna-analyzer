@@ -11,9 +11,13 @@ from Bio import SeqIO
 import io
 from sklearn.metrics import silhouette_score, silhouette_samples
 import traceback
+import os
+
+BASE_DIR = os.path.dirname(__file__)
+HDBSCAN_MODEL_PATH = os.path.join(BASE_DIR, "hdbscan_model.pkl")
 
 MODEL_NAME = "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species"
-HDBSCAN_MODEL_PATH = "hdbscan_model.pkl"
+# HDBSCAN_MODEL_PATH = "hdbscan_model.pkl"
 MAX_LENGTH = 20
 print("Loading Nucleotide Transformer...")
 tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME, trust_remote_code=True)

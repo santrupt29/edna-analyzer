@@ -3,8 +3,8 @@ import { v4 as uuidv4 } from "uuid";
 import axios from "axios";
 import FormData from "form-data";
 
-const ML_API = "https://huggingface.co/spaces/KartikB34/DNA_Cluster_Analyzer";
-
+// const ML_API = "https://huggingface.co/spaces/KartikB34/DNA_Cluster_Analyzer";
+const ML_API="http://127.0.0.1:8000"
 
 export const handleFileUpload = async (req, res) => {
   try {
@@ -96,6 +96,8 @@ if (status === "completed") {
     status,
   }).eq("id", data.id);
 }
+
+console.log(mlData)
 
 res.status(201).json({
   message: "File uploaded and processed",

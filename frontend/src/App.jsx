@@ -79,6 +79,7 @@ export default function App() {
 
       <Routes>   
         <Route path="/" element={<LandingPage />} />
+        <Route path="/upload" element={<UploadPage />} />
 
         <Route path="/signup" element={<SignUp />} />
         <Route path="/signin" element={<SignIn />} />
