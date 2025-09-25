@@ -2,9 +2,12 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Navigate } from 'react-router-dom';
+import {supabase} from '../lib/supabase.js'
+import { useNavigate } from 'react-router-dom';
 
 const LandingPage = () => {
   const [isScrolled, setIsScrolled] = useState(false);
+  
 
   useEffect(() => {
     const handleScroll = () => {
@@ -15,7 +18,7 @@ const LandingPage = () => {
   }, []);
 
   return (
-    <div className="min-h-screen font-inter text-gray-900 overflow-x-hidden">
+    <div className="min-h-screen font-inter text-gray-900 overflow-x-hidden pt-20">
       <Header isScrolled={isScrolled} />
       <HeroSection />
       <FeaturesSection />
@@ -26,8 +29,19 @@ const LandingPage = () => {
   );
 };
 
+
+
 // Header Component
 const Header = ({ isScrolled }) => {
+  const navigate=useNavigate();
+  const handleClick = async () => {
+  const user = await supabase.auth.getUser();
+  if (user.data.user) {
+    navigate('/upload');
+  } else {
+    navigate('/signin');
+  }
+};
   return (
     <motion.header 
       className={`fixed top-0 w-full z-50 transition-all duration-300 ${
@@ -40,14 +54,15 @@ const Header = ({ isScrolled }) => {
       transition={{ duration: 0.5 }}
     >
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center py-4">
-          <motion.div 
-            className="text-2xl font-bold bg-gradient-to-r from-indigo-500 to-purple-600 bg-clip-text text-transparent cursor-pointer"
-            whileHover={{ scale: 1.05 }}
-            transition={{ type: "spring", stiffness: 300 }}
-          >
-            BioTrace
-          </motion.div>
+  <div className="flex justify-between items-center py-4">
+    <motion.div 
+      className="flex items-center text-2xl font-bold bg-gradient-to-r from-indigo-500 to-purple-600 bg-clip-text text-transparent cursor-pointer"
+      whileHover={{ scale: 1.05 }}
+      transition={{ type: "spring", stiffness: 300 }}
+    >
+      <span className="mr-1">🧬</span>
+      BioTrace
+    </motion.div>
           
           <nav className="hidden md:flex space-x-8">
             {['Features', 'How It Works', 'Research', 'Contact'].map((item, index) => (
@@ -67,6 +82,7 @@ const Header = ({ isScrolled }) => {
             className="bg-indigo-600 text-white px-6 py-2.5 rounded-xl font-semibold hover:bg-indigo-700 transition-all duration-300 shadow-lg hover:shadow-xl"
             whileHover={{ scale: 1.05, y: -2 }}
             whileTap={{ scale: 0.95 }}
+            onClick={handleClick}
           >
             Get Started
           </motion.button>
@@ -76,21 +92,37 @@ const Header = ({ isScrolled }) => {
   );
 };
 
+
+
 // Hero Section Component
 const HeroSection = () => {
+  const navigate=useNavigate();
+  const handleClick = async () => {
+  const user = await supabase.auth.getUser();
+  if (user.data.user) {
+    navigate('/upload');
+  } else {
+    navigate('/signin');
+  }}
   return (
-    <section className="min-h-screen flex items-center bg-gradient-to-br from-indigo-50 via-white to-purple-50 relative overflow-hidden">
+    <section className="min-h-screen flex items-center bg-gradient-to-br from-indigo-50 via-white to-purple-50 relative overflow-hidden px-4 sm:px-6 lg:px-8">
+      
       {/* Background Pattern */}
       <div className="absolute inset-0 opacity-30">
-        <div className="absolute inset-0" style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%234f46e5' fill-opacity='0.05'%3E%3Ccircle cx='30' cy='30' r='4'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-        }}></div>
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%234f46e5' fill-opacity='0.05'%3E%3Ccircle cx='30' cy='30' r='4'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+          }}
+        ></div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
-          <motion.div 
-            className="text-center lg:text-left"
+      <div className="max-w-6xl mx-auto relative z-10 w-full">
+        <div className="grid lg:grid-cols-2 gap-20 items-center">
+          
+          {/* Text Section */}
+          <motion.div
+            className="text-left"
             initial={{ opacity: 0, x: -50 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8 }}
@@ -106,9 +138,9 @@ const HeroSection = () => {
                 AI-Powered eDNA
               </span>
             </motion.h1>
-            
+
             <motion.p
-              className="text-xl text-gray-600 mb-8 leading-relaxed max-w-2xl"
+              className="text-xl text-gray-600 mb-8 leading-relaxed max-w-xl"
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4, duration: 0.8 }}
@@ -116,9 +148,9 @@ const HeroSection = () => {
               Unlock the secrets of environmental DNA using cutting-edge machine learning algorithms. 
               Identify known species, discover new ones, and monitor ecosystem health with unprecedented precision and speed.
             </motion.p>
-            
-            <motion.div 
-              className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start mb-12"
+
+            <motion.div
+              className="flex flex-col sm:flex-row gap-4 mb-12"
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.6, duration: 0.8 }}
@@ -127,6 +159,8 @@ const HeroSection = () => {
                 className="bg-indigo-600 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:bg-indigo-700 transition-all duration-300 shadow-lg hover:shadow-xl"
                 whileHover={{ scale: 1.05, y: -2 }}
                 whileTap={{ scale: 0.95 }}
+                onClick={handleClick}
+                
               >
                 Start Analysis
               </motion.button>
@@ -138,27 +172,24 @@ const HeroSection = () => {
                 Watch Demo
               </motion.button>
             </motion.div>
-            
-            <motion.div 
-              className="grid grid-cols-3 gap-8 max-w-md mx-auto lg:mx-0"
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.8, duration: 0.8 }}
-            >
+
+            <motion.div className="grid grid-cols-3 gap-8 max-w-md" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8, duration: 0.8 }}>
               <StatItem number="10,000+" label="Species Identified" />
               <StatItem number="95%" label="Accuracy Rate" />
-              <StatItem number="24hrs" label="Processing Time" />
+              <StatItem number="5mins" label="Processing Time" />
             </motion.div>
           </motion.div>
-          
+
+          {/* DNA Section Top-Right */}
           <motion.div 
-            className="flex justify-center lg:justify-end"
+            className="flex justify-end items-start"
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.4, duration: 1 }}
           >
             <DNAVisualization />
           </motion.div>
+
         </div>
       </div>
     </section>
@@ -167,63 +198,36 @@ const HeroSection = () => {
 
 // DNA Visualization Component
 const DNAVisualization = () => {
+  const numRungs = 15;
+
   return (
-    <div className="relative w-80 h-80 lg:w-96 lg:h-96">
-      <div className="absolute inset-0 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center shadow-2xl">
-        <motion.div 
-          className="w-48 h-48 lg:w-56 lg:h-56 relative"
-          animate={{ rotate: 360 }}
-          transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-        >
-          <div className="absolute inset-0 border-4 border-white/80 rounded-full"></div>
-          <div className="absolute inset-0 border-4 border-white/60 rounded-full transform rotate-45"></div>
-          <div className="absolute inset-0 border-4 border-white/40 rounded-full transform rotate-90"></div>
-        </motion.div>
-        
-        {/* DNA Particles */}
-        <div className="absolute inset-0">
-          {[...Array(12)].map((_, i) => (
-            <motion.div
-              key={i}
-              className="absolute w-2 h-2 bg-white rounded-full opacity-70"
-              animate={{
-                y: [0, -20, 0],
-                opacity: [0.3, 1, 0.3]
-              }}
-              transition={{
-                duration: 2,
-                delay: i * 0.2,
-                repeat: Infinity
-              }}
-              style={{
-                top: '50%',
-                left: '50%',
-                transform: `rotate(${i * 30}deg) translateX(100px) translateY(-50%)`
-              }}
-            />
-          ))}
-        </div>
-      </div>
+    <div className="relative w-64 sm:w-80 md:w-96 h-96">
+      {[...Array(numRungs)].map((_, i) => {
+        const angle = i * (Math.PI / 6);
+        const y = i * 30;
+        const xOffset = 40 * Math.sin(angle);
+
+        return (
+          <div key={i} className="absolute w-full h-4 top-0 left-1/2 transform -translate-x-1/2" style={{ top: `${y}px` }}>
+            <motion.div className="absolute w-4 h-4 bg-blue-400 rounded-full" style={{ left: `${-xOffset}px` }} animate={{ y: [-3, 3, -3] }} transition={{ repeat: Infinity, duration: 1, ease: "easeInOut" }} />
+            <motion.div className="absolute w-4 h-4 bg-pink-400 rounded-full" style={{ left: `${xOffset}px` }} animate={{ y: [3, -3, 3] }} transition={{ repeat: Infinity, duration: 1, ease: "easeInOut" }} />
+            <div className="absolute h-1 bg-gray-300" style={{ left: `${-xOffset}px`, width: `${2 * xOffset}px`, top: '50%' }} />
+          </div>
+        );
+      })}
     </div>
   );
 };
 
 // Stat Item Component
-const StatItem = ({ number, label }) => {
-  return (
-    <motion.div 
-      className="text-center cursor-pointer"
-      whileHover={{ scale: 1.05 }}
-    >
-      <div className="text-2xl lg:text-3xl font-bold text-indigo-600 mb-1">
-        {number}
-      </div>
-      <div className="text-xs lg:text-sm text-gray-500 uppercase tracking-wider">
-        {label}
-      </div>
-    </motion.div>
-  );
-};
+const StatItem = ({ number, label }) => (
+  <motion.div className="text-center cursor-pointer" whileHover={{ scale: 1.05 }}>
+    <div className="text-2xl lg:text-3xl font-bold text-indigo-600 mb-1">{number}</div>
+    <div className="text-xs lg:text-sm text-gray-500 uppercase tracking-wider">{label}</div>
+  </motion.div>
+);
+
+
 
 // Features Section Component
 const FeaturesSection = () => {

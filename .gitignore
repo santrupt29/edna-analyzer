@@ -12,3 +12,4 @@ node_modules
 dataset_sample/
 runs/
 taxanomy/
+venv
